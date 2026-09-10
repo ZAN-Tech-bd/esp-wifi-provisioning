@@ -149,9 +149,11 @@ hardened for sensitive deployments.
 
 If you need real confidentiality on the air:
 
-1. Enable BLE Secure Connections + bonding (`esp_ble_gap_set_security_param`
-   with `ESP_LE_AUTH_REQ_SC_BOND`, IO capability `ESP_IO_CAP_OUT` with a
-   fixed or randomized passkey shown on a display/printed label).
+1. Enable BLE Secure Connections + bonding — with NimBLE-Arduino (what this
+   firmware uses), that's `NimBLEDevice::setSecurityAuth(true, true, true)`
+   plus `NimBLEDevice::setSecurityIOCap(...)` for a passkey or numeric-
+   comparison pairing flow (fixed or randomized passkey shown on a
+   display/printed label).
 2. Or layer app-level encryption on the `Credentials` payload (e.g. a
    pre-shared key baked into firmware + app at build time, AES-GCM the JSON
    body) — simpler to retrofit than BLE-level bonding and works even on

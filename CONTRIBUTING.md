@@ -24,7 +24,9 @@ requests, and forks are all welcome.
    [`docs/BLE_PROTOCOL.md`](docs/BLE_PROTOCOL.md) in the same PR and explain
    the compatibility impact (see its "Versioning" section).
 2. Firmware: the sketch should still compile for a plain `esp32:esp32:esp32`
-   board (Arduino IDE, esp32 core, ArduinoJson).
+   board with the default partition scheme (Arduino IDE, esp32 core,
+   ArduinoJson, NimBLE-Arduino) — that's the tightest fit of any supported
+   chip, so it's the one to check after any change that adds code.
 3. App: `flutter analyze` should pass with no new warnings.
 4. Describe what you tested (which board, which phone) in the PR
    description — this is hardware-adjacent code that CI can't fully verify.

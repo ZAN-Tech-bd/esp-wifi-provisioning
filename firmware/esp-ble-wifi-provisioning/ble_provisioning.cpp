@@ -2,46 +2,61 @@
 #include "config.h"
 
 #include <ArduinoJson.h>
-#include <BLE2902.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
+#include <NimBLEDevice.h>
 #include <WiFi.h>
-#include <string.h>
+#include <esp_mac.h>
 
 BleProvisioning bleProvisioning;
 
 namespace {
 
-BLECharacteristic *gDeviceInfoChar = nullptr;
-BLECharacteristic *gCommandChar = nullptr;
-BLECharacteristic *gNetworkChar = nullptr;
-BLECharacteristic *gCredentialsChar = nullptr;
-BLECharacteristic *gStatusChar = nullptr;
+NimBLECharacteristic *gDeviceInfoChar = nullptr;
+NimBLECharacteristic *gCommandChar = nullptr;
+NimBLECharacteristic *gNetworkChar = nullptr;
+NimBLECharacteristic *gCredentialsChar = nullptr;
+NimBLECharacteristic *gStatusChar = nullptr;
 
-String macSuffix() {
-  String mac = WiFi.macAddress();  // "AA:BB:CC:DD:EE:FF"
-  mac.replace(":", "");
-  return mac.substring(mac.length() - 4);  // last 2 bytes
+// WiFi.macAddress() can return all-zeros if called before the WiFi driver
+// has fully started (esp_wifi_start() hasn't run yet at this point in
+// boot - we go straight to BLE provisioning without ever calling
+// WiFi.begin()/scan first). Read the factory-programmed MAC straight from
+// eFuse instead, which needs no driver state at all.
+void readStationMac(uint8_t mac[6]) {
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
 }
 
-class ServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer *server) override {
+String macToString(const uint8_t mac[6]) {
+  char buf[18];
+  snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X",
+           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  return String(buf);
+}
+
+String macSuffix() {
+  uint8_t mac[6];
+  readStationMac(mac);
+  char buf[5];
+  snprintf(buf, sizeof(buf), "%02X%02X", mac[4], mac[5]);
+  return String(buf);
+}
+
+class ServerCallbacks : public NimBLEServerCallbacks {
+  void onConnect(NimBLEServer *server, NimBLEConnInfo &connInfo) override {
     Serial.println("[BLE] client connected");
   }
-  void onDisconnect(BLEServer *server) override {
+  void onDisconnect(NimBLEServer *server, NimBLEConnInfo &connInfo, int reason) override {
     Serial.println("[BLE] client disconnected, resuming advertising");
-    BLEDevice::startAdvertising();
+    NimBLEDevice::startAdvertising();
   }
 };
 
-class CommandCallbacks : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *characteristic) override {
-    String raw = characteristic->getValue();
-    if (raw.length() == 0) return;
+class CommandCallbacks : public NimBLECharacteristicCallbacks {
+  void onWrite(NimBLECharacteristic *characteristic, NimBLEConnInfo &connInfo) override {
+    const NimBLEAttValue &value = characteristic->getValue();
+    if (value.length() == 0) return;
 
     JsonDocument doc;
-    if (deserializeJson(doc, raw) != DeserializationError::Ok) {
+    if (deserializeJson(doc, value.c_str(), value.length()) != DeserializationError::Ok) {
       Serial.println("[BLE] command: bad JSON");
       return;
     }
@@ -59,13 +74,13 @@ class CommandCallbacks : public BLECharacteristicCallbacks {
   }
 };
 
-class CredentialsCallbacks : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *characteristic) override {
-    String raw = characteristic->getValue();
-    if (raw.length() == 0) return;
+class CredentialsCallbacks : public NimBLECharacteristicCallbacks {
+  void onWrite(NimBLECharacteristic *characteristic, NimBLEConnInfo &connInfo) override {
+    const NimBLEAttValue &value = characteristic->getValue();
+    if (value.length() == 0) return;
 
     JsonDocument doc;
-    if (deserializeJson(doc, raw) != DeserializationError::Ok) {
+    if (deserializeJson(doc, value.c_str(), value.length()) != DeserializationError::Ok) {
       Serial.println("[BLE] credentials: bad JSON");
       return;
     }
@@ -93,37 +108,36 @@ void BleProvisioning::begin(WifiManager *wifiManager) {
   String deviceName = String(DEVICE_NAME_PREFIX) + macSuffix();
   Serial.printf("[BLE] advertising as %s\n", deviceName.c_str());
 
-  BLEDevice::init(deviceName.c_str());
-  BLEServer *server = BLEDevice::createServer();
+  NimBLEDevice::init(deviceName.c_str());
+  NimBLEServer *server = NimBLEDevice::createServer();
   server->setCallbacks(&gServerCallbacks);
 
-  BLEService *service = server->createService(SERVICE_UUID);
+  NimBLEService *service = server->createService(SERVICE_UUID);
 
   gDeviceInfoChar = service->createCharacteristic(
-      CHAR_DEVICE_INFO_UUID, BLECharacteristic::PROPERTY_READ);
+      CHAR_DEVICE_INFO_UUID, NIMBLE_PROPERTY::READ);
 
   gCommandChar = service->createCharacteristic(
-      CHAR_COMMAND_UUID, BLECharacteristic::PROPERTY_WRITE);
+      CHAR_COMMAND_UUID, NIMBLE_PROPERTY::WRITE);
   gCommandChar->setCallbacks(&gCommandCallbacks);
 
   gNetworkChar = service->createCharacteristic(
-      CHAR_NETWORK_UUID, BLECharacteristic::PROPERTY_NOTIFY);
-  gNetworkChar->addDescriptor(new BLE2902());
+      CHAR_NETWORK_UUID, NIMBLE_PROPERTY::NOTIFY);
 
   gCredentialsChar = service->createCharacteristic(
-      CHAR_CREDENTIALS_UUID, BLECharacteristic::PROPERTY_WRITE);
+      CHAR_CREDENTIALS_UUID, NIMBLE_PROPERTY::WRITE);
   gCredentialsChar->setCallbacks(&gCredentialsCallbacks);
 
   gStatusChar = service->createCharacteristic(
-      CHAR_STATUS_UUID,
-      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-  gStatusChar->addDescriptor(new BLE2902());
+      CHAR_STATUS_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
 
   {
     JsonDocument doc;
     doc["device"] = DEVICE_NAME_PREFIX;
     doc["fw"] = FIRMWARE_VERSION;
-    doc["mac"] = WiFi.macAddress();
+    uint8_t mac[6];
+    readStationMac(mac);
+    doc["mac"] = macToString(mac);
     doc["chip"] = CHIP_LABEL;
     String out;
     serializeJson(doc, out);
@@ -132,17 +146,15 @@ void BleProvisioning::begin(WifiManager *wifiManager) {
 
   // Set the initial value directly (no client is connected yet, so there is
   // nothing to notify) - notify() must not be called before service->start(),
-  // or the BLE stack asserts (getService() != nullptr) and reboots.
+  // or the BLE stack rejects it / misbehaves.
   gStatusChar->setValue("{\"status\":\"idle\"}");
 
   service->start();
 
-  BLEAdvertising *advertising = BLEDevice::getAdvertising();
+  NimBLEAdvertising *advertising = NimBLEDevice::getAdvertising();
   advertising->addServiceUUID(SERVICE_UUID);
-  advertising->setScanResponse(true);
-  advertising->setMinPreferred(0x06);
-  advertising->setMinPreferred(0x12);
-  BLEDevice::startAdvertising();
+  advertising->enableScanResponse(true);
+  advertising->start();
 
   state_ = State::Idle;
   stateEnteredMs_ = millis();

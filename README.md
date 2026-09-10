@@ -76,13 +76,14 @@ esp-ble-wifi-provisioning/
    original ESP32, S3, C3; not the S2):
 
    ```bash
-   # Arduino IDE: install the esp32 board package + ArduinoJson library,
-   # then open and upload this sketch.
+   # Arduino IDE: install the esp32 board package + ArduinoJson and
+   # NimBLE-Arduino libraries, then open and upload this sketch.
    firmware/esp-ble-wifi-provisioning/esp-ble-wifi-provisioning.ino
 
    # or arduino-cli:
    arduino-cli core install esp32:esp32
    arduino-cli lib install ArduinoJson
+   arduino-cli lib install "NimBLE-Arduino"
    cd firmware/esp-ble-wifi-provisioning
    arduino-cli compile --fqbn esp32:esp32:esp32c3 .
    arduino-cli upload  --fqbn esp32:esp32:esp32c3 --port COM7 .
@@ -109,16 +110,19 @@ permissions and what to do if the app can't find your device — are in
 
 The firmware only assumes an ESP32 variant with both Wi-Fi and BLE (ESP32,
 S3, C3 — not the S2, which has no Bluetooth radio, and not the H2, which has
-no Wi-Fi). It's a plain Arduino sketch with one external dependency
-(ArduinoJson), so it drops into any existing ESP32 project: add your own
+no Wi-Fi). It's a plain Arduino sketch with two dependencies (ArduinoJson,
+NimBLE-Arduino), so it drops into any existing ESP32 project: add your own
 application logic where the sketch marks `YOUR CODE HERE`, and it only runs
 once Wi-Fi is actually connected.
 
-> **Flashing an original ESP32** (not S3/C3/C6/C2)**?** You need a bigger
-> partition scheme (Tools → Partition Scheme → "Huge APP") or the build
-> fails with "text section exceeds available space" — see
-> [`firmware/README.md`](firmware/README.md#common-pitfalls) for why and
-> the exact fix.
+This is meant to be **one part** of a bigger product, not the whole thing —
+you'll be adding your own sensors, actuators, and networking code on top.
+That's why it uses [NimBLE](firmware/README.md#why-nimble-not-the-stock-ble-library)
+instead of the stock ESP32 BLE library: NimBLE has no classic-Bluetooth
+baggage on any chip, so this module leaves real flash headroom for
+everything else you build, and fits the **default** partition scheme with
+no special Arduino IDE settings — including on the original ESP32, where
+the stock BLE library alone would overflow it.
 
 ## Why BLE plaintext by default (and how to harden it)
 
