@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
     <application
-        android:label="zan_wifi_provisioning"
+        android:label="ZAN WiFi Setup"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
