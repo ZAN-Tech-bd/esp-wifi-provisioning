@@ -37,8 +37,8 @@ class ServerCallbacks : public BLEServerCallbacks {
 
 class CommandCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *characteristic) override {
-    std::string raw = characteristic->getValue();
-    if (raw.empty()) return;
+    String raw = characteristic->getValue();
+    if (raw.length() == 0) return;
 
     JsonDocument doc;
     if (deserializeJson(doc, raw) != DeserializationError::Ok) {
@@ -61,8 +61,8 @@ class CommandCallbacks : public BLECharacteristicCallbacks {
 
 class CredentialsCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *characteristic) override {
-    std::string raw = characteristic->getValue();
-    if (raw.empty()) return;
+    String raw = characteristic->getValue();
+    if (raw.length() == 0) return;
 
     JsonDocument doc;
     if (deserializeJson(doc, raw) != DeserializationError::Ok) {
