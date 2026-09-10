@@ -10,6 +10,12 @@ build an entire product on top of it — that's the point.
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform: ESP32](https://img.shields.io/badge/platform-ESP32-blue.svg)](firmware/)
 [![App: Flutter](https://img.shields.io/badge/app-Flutter-02569B.svg)](app/)
+[![Download APK](https://img.shields.io/github/v/release/ZAN-Tech-bd/esp-ble-wifi-provisioning?label=download%20app&color=0EA5A4)](https://github.com/ZAN-Tech-bd/esp-ble-wifi-provisioning/releases/latest)
+
+📱 **Just want to try the app?** Grab the prebuilt APK from the
+[**latest release**](https://github.com/ZAN-Tech-bd/esp-ble-wifi-provisioning/releases/latest)
+— no build tools needed, just an Android phone with "install from unknown
+sources" allowed for your browser/file manager.
 
 ## What this is
 
