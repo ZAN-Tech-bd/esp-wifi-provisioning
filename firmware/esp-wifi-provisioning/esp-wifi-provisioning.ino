@@ -39,9 +39,6 @@
 Preferences preferences;
 WebServer server(80);
 
-String ssid = "";
-String password = "";
-
 // Builds a hotspot name like "ZAN-Setup-8C38" from the chip's own MAC
 // address, so more than one of these devices can be told apart if several
 // are being set up near each other. Reads the MAC straight from the chip
@@ -64,12 +61,18 @@ void handleRoot() {
 // in and restarts; setup() below then tries connecting with it on the
 // next boot.
 void handleSave() {
-  ssid = server.arg("ssid");
-  password = server.arg("pass");
+  String newSsid = server.arg("ssid");
+  newSsid.trim();  // mobile keyboards love adding a trailing space
+  String newPassword = server.arg("pass");
+
+  if (newSsid.length() == 0) {
+    server.send(200, "text/html", SETUP_PAGE_HTML);  // nothing to save, just re-show the form
+    return;
+  }
 
   preferences.begin(NVS_NAMESPACE, false);
-  preferences.putString("ssid", ssid);
-  preferences.putString("pass", password);
+  preferences.putString("ssid", newSsid);
+  preferences.putString("pass", newPassword);
   preferences.end();
 
   server.send(200, "text/html", SAVED_PAGE_HTML);
@@ -82,13 +85,13 @@ void setup() {
 
   // --- Step 1: load whatever Wi-Fi details were saved last time --------
   preferences.begin(NVS_NAMESPACE, true);
-  ssid = preferences.getString("ssid", "");
-  password = preferences.getString("pass", "");
+  String savedSsid = preferences.getString("ssid", "");
+  String savedPassword = preferences.getString("pass", "");
   preferences.end();
 
   // --- Step 2: try connecting with them, if there were any -------------
-  if (ssid != "") {
-    WiFi.begin(ssid.c_str(), password.c_str());
+  if (savedSsid != "") {
+    WiFi.begin(savedSsid.c_str(), savedPassword.c_str());
     Serial.print("Connecting to saved Wi-Fi");
     for (int i = 0; i < WIFI_CONNECT_TIMEOUT_MS / 500; i++) {
       if (WiFi.status() == WL_CONNECTED) break;
