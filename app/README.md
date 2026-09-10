@@ -55,8 +55,10 @@ location from BLE scan results — it only matches devices by advertised
 service UUID / name. `ACCESS_FINE_LOCATION` is still required by the OS on
 Android 11 (API 30) and below for any BLE scan.
 
-Also set `minSdkVersion` to at least `21` in
-`android/app/build.gradle` (`flutter_blue_plus` requires it).
+`flutter_blue_plus` requires `minSdkVersion` 21+; recent Flutter versions
+already default `android/app/build.gradle.kts`'s `minSdk` above that via
+`flutter.minSdkVersion`, so this is normally a non-issue — only check it
+if you're on an older Flutter/Gradle template.
 
 ### iOS — `ios/Runner/Info.plist`
 
@@ -72,10 +74,21 @@ Add:
 ## Running
 
 BLE does not work in the iOS Simulator or most Android emulators — use a
-real phone connected via USB (or wireless debugging):
+real phone connected via USB (or wireless debugging). Confirm it's detected,
+then run:
 
 ```bash
-flutter run
+flutter devices   # your phone should be listed
+flutter run       # builds, installs, launches, hot-reloads
+```
+
+To build once and install separately instead (e.g. scripting it, or you
+don't want `flutter run`'s interactive session):
+
+```bash
+flutter build apk --debug
+adb install -r build/app/outputs/flutter-apk/app-debug.apk
+adb shell am start -n com.zantech.zan_wifi_provisioning/.MainActivity
 ```
 
 ## Rebranding for your own product

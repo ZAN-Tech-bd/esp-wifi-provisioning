@@ -24,6 +24,23 @@ ESP32, S3, C3 — **not** the S2, which has no Bluetooth radio).
 2. Library Manager → install `ArduinoJson`.
 3. Open this folder's `.ino` file, pick your board + port, Upload.
 
+## Build & flash (arduino-cli)
+
+```bash
+arduino-cli core install esp32:esp32
+arduino-cli lib install ArduinoJson
+
+arduino-cli board list          # find your port + exact chip
+cd firmware/esp-ble-wifi-provisioning
+arduino-cli compile --fqbn esp32:esp32:esp32c3 .
+arduino-cli upload  --fqbn esp32:esp32:esp32c3 --port COM7 .
+```
+
+Use the specific chip FQBN (`esp32:esp32:esp32c3`, `esp32:esp32:esp32s3`,
+`esp32:esp32:esp32`, ...) — see the callout in
+[`docs/GETTING_STARTED.md`](../docs/GETTING_STARTED.md#option-b--arduino-cli)
+if `board list` only reports a generic "Family Device" entry.
+
 ## Build & flash (PlatformIO)
 
 No `platformio.ini` is committed (this repo targets Arduino IDE users by
@@ -52,6 +69,28 @@ Everything tunable lives in `config.h` — nothing else in this folder should
 need editing for basic customization (device name prefix, button pin,
 timeouts). Only touch the UUIDs in `config.h` if you're also updating the
 app side to match (see [`docs/BLE_PROTOCOL.md`](../docs/BLE_PROTOCOL.md)).
+
+## Common pitfalls
+
+**Never call `notify()` on a characteristic before its service's
+`service->start()` has run.** The Bluedroid BLE library asserts
+(`getService() != nullptr`) and reboots the chip if you do — and because it
+crashes again on every subsequent boot, this manifests as a silent boot
+loop where the device never advertises and never shows up in the app, with
+no obvious error unless you happen to catch the crash dump over serial
+(see the native-USB serial note in
+[`docs/GETTING_STARTED.md`](../docs/GETTING_STARTED.md#confirm-its-alive)).
+`ble_provisioning.cpp` sets the initial Status value with `setValue()`
+(no client is connected yet, so there's nothing to notify) and only calls
+`notify()` after `service->start()` — keep that ordering if you touch
+`begin()`.
+
+**`BLECharacteristic::getValue()`'s return type depends on your esp32 core
+version.** Older core releases return `std::string`; core 3.x (tested:
+3.3.11) returns Arduino `String`. `ble_provisioning.cpp` uses `String` — if
+you're on an older core and see a "conversion from 'String' to non-scalar
+type 'std::string'" compile error, swap the type in
+`CommandCallbacks::onWrite` / `CredentialsCallbacks::onWrite` accordingly.
 
 ## Memory footprint
 

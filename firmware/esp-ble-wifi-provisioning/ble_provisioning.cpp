@@ -130,7 +130,10 @@ void BleProvisioning::begin(WifiManager *wifiManager) {
     gDeviceInfoChar->setValue(out.c_str());
   }
 
-  publishStatus("{\"status\":\"idle\"}");
+  // Set the initial value directly (no client is connected yet, so there is
+  // nothing to notify) - notify() must not be called before service->start(),
+  // or the BLE stack asserts (getService() != nullptr) and reboots.
+  gStatusChar->setValue("{\"status\":\"idle\"}");
 
   service->start();
 
