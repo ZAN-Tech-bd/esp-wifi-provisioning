@@ -17,10 +17,13 @@ const char SETUP_PAGE_HTML[] = R"rawliteral(
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Wi-Fi Setup</title>
+<title>ZAN Tech Wi-Fi Setup</title>
 <style>
   :root { --brand: #0EA5A4; --brand-dark: #0b7f7e; --text: #0f172a; --muted: #64748b; }
   * { box-sizing: border-box; }
+  .brand { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; }
+  .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); }
+  .brand-name { font-size: 0.8em; font-weight: 700; letter-spacing: 0.4px; color: var(--muted); }
   body {
     margin: 0; min-height: 100vh; padding: 24px;
     display: flex; align-items: center; justify-content: center;
@@ -58,6 +61,7 @@ const char SETUP_PAGE_HTML[] = R"rawliteral(
 </head>
 <body>
   <div class="card">
+    <div class="brand"><span class="brand-dot"></span><span class="brand-name">ZAN TECH</span></div>
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#0EA5A4" stroke-width="2" stroke-linecap="round">
       <path d="M4 11.5a12 12 0 0 1 16 0"/>
       <path d="M7.3 15a7.5 7.5 0 0 1 9.4 0"/>
@@ -109,10 +113,13 @@ const char SAVED_PAGE_HTML[] = R"rawliteral(
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Saved</title>
+<title>ZAN Tech Wi-Fi Setup</title>
 <style>
   :root { --brand: #0EA5A4; --brand-dark: #0b7f7e; --text: #0f172a; --muted: #64748b; }
   * { box-sizing: border-box; }
+  .brand { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; }
+  .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); }
+  .brand-name { font-size: 0.8em; font-weight: 700; letter-spacing: 0.4px; color: var(--muted); }
   body {
     margin: 0; min-height: 100vh; padding: 24px;
     display: flex; align-items: center; justify-content: center;
@@ -132,6 +139,7 @@ const char SAVED_PAGE_HTML[] = R"rawliteral(
 </head>
 <body>
   <div class="card">
+    <div class="brand"><span class="brand-dot"></span><span class="brand-name">ZAN TECH</span></div>
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#0EA5A4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10" stroke="#0EA5A4"/>
       <path d="M8 12.5l2.5 2.5L16 9.5"/>
