@@ -1,0 +1,42 @@
+# ---- Arduino / PlatformIO ----
+firmware/**/build/
+firmware/**/.pio/
+*.hex
+*.bin
+*.elf
+*.map
+
+# ---- Flutter / Dart ----
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/.pub-cache/
+app/.pub/
+app/build/
+app/android/.gradle/
+app/android/captures/
+app/android/local.properties
+app/android/**/GeneratedPluginRegistrant.java
+app/ios/Flutter/Flutter.podspec
+app/ios/Flutter/Generated.xcconfig
+app/ios/Flutter/flutter_export_environment.sh
+app/ios/Pods/
+app/ios/.symlinks/
+app/**/*.g.dart
+app/**/*.freezed.dart
+
+# ---- IDE / editor ----
+.vscode/
+.idea/
+*.iml
+*.swp
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Secrets (never commit real credentials) ----
+*.env
+secrets.h
