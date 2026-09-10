@@ -26,6 +26,21 @@ projects:
 4. Submitting it saves the credentials to flash and restarts the device,
    which connects straight to that network from then on.
 
+## What it looks like
+
+<p align="center">
+  <img src="docs/screenshots/setup-page.png" width="46%" alt="Wi-Fi setup form">
+  <img src="docs/screenshots/saved-page.png" width="46%" alt="Saved confirmation page">
+</p>
+
+Left: the form shown at `192.168.4.1` right after connecting to the
+device's hotspot. Right: the confirmation shown after submitting, just
+before the device restarts. Colors match ZAN Tech's actual brand — checked
+against [zantechbd.com](https://zantechbd.com)'s live styles rather than
+guessed: dark navy (`#0B0F19`), cyan `#00F0FF` as the primary accent, red
+`#ED2626` for the "TECH" half of the logo. Editable in one place:
+[`firmware/esp-wifi-provisioning/page.h`](firmware/esp-wifi-provisioning/page.h).
+
 ```mermaid
 sequenceDiagram
     participant User

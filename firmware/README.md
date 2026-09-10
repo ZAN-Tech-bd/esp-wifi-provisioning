@@ -62,6 +62,9 @@ Two clearly marked spots in `esp-wifi-provisioning.ino`:
 
 ## Changing the setup page
 
+See [`../README.md#what-it-looks-like`](../README.md#what-it-looks-like)
+for a screenshot of the current form and confirmation pages.
+
 Edit `page.h` — it's plain HTML in a raw string, nothing ESP-specific about
 it. The form must keep posting to `/save` with fields named `ssid` and
 `pass` (or update `handleSave()` in the `.ino` to match if you rename them).
