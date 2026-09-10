@@ -22,7 +22,11 @@ ESP32, S3, C3 — **not** the S2, which has no Bluetooth radio).
 
 1. Boards Manager → install `esp32` by Espressif Systems.
 2. Library Manager → install `ArduinoJson`.
-3. Open this folder's `.ino` file, pick your board + port, Upload.
+3. Open this folder's `.ino` file, pick your board + port.
+4. **If your board is an original ESP32** (not S3/C3/C6/C2): Tools →
+   Partition Scheme → **"Huge APP (3MB No OTA/1MB SPIFFS)"**. See the
+   partition scheme pitfall below for why this is required.
+5. Upload.
 
 ## Build & flash (arduino-cli)
 
@@ -40,6 +44,14 @@ Use the specific chip FQBN (`esp32:esp32:esp32c3`, `esp32:esp32:esp32s3`,
 `esp32:esp32:esp32`, ...) — see the callout in
 [`docs/GETTING_STARTED.md`](../docs/GETTING_STARTED.md#option-b--arduino-cli)
 if `board list` only reports a generic "Family Device" entry.
+
+**Targeting an original ESP32?** Append the partition scheme option or the
+build will fail with "text section exceeds available space":
+
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32:PartitionScheme=huge_app .
+arduino-cli upload  --fqbn esp32:esp32:esp32:PartitionScheme=huge_app --port COM7 .
+```
 
 ## Build & flash (PlatformIO)
 
@@ -91,6 +103,25 @@ version.** Older core releases return `std::string`; core 3.x (tested:
 you're on an older core and see a "conversion from 'String' to non-scalar
 type 'std::string'" compile error, swap the type in
 `CommandCallbacks::onWrite` / `CredentialsCallbacks::onWrite` accordingly.
+
+**Original ESP32 boards need a bigger partition scheme.** You'll see:
+
+```
+Sketch uses 1665059 bytes (127%) of program storage space. Maximum is 1310720 bytes.
+text section exceeds available space in board
+```
+
+This is not a bug in the sketch — it's the default partition table's app
+slot (1.2MB) being too small. The original ESP32 chip has classic
+Bluetooth hardware alongside BLE, and the Bluedroid library links in the
+combo classic+BLE stack even though this firmware only calls BLE APIs,
+which is much larger than the BLE-only stack on chips without classic BT
+(S3, C3, C6, C2) — those fit comfortably in the default scheme (~95% used
+on an ESP32-C3). Fix: pick a partition scheme with a bigger app partition —
+**Tools → Partition Scheme → "Huge APP (3MB No OTA/1MB SPIFFS)"** in
+Arduino IDE, or `:PartitionScheme=huge_app` appended to the FQBN in
+arduino-cli (see above). This firmware doesn't use OTA updates or a
+filesystem, so trading those away for app space costs nothing here.
 
 ## Memory footprint
 

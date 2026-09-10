@@ -38,7 +38,11 @@ actually tested with). Pick one.
 4. Tools → Board → pick your **exact chip** (see the callout below — don't
    pick a generic "Family Device" entry if one shows up).
 5. Tools → Port → pick the port your board enumerated as.
-6. Click Upload.
+6. **If your board is an original ESP32** (not S3/C3/C6/C2): Tools →
+   Partition Scheme → **"Huge APP (3MB No OTA/1MB SPIFFS)"** — otherwise
+   the build fails with "text section exceeds available space" (see the
+   partition scheme callout below for why).
+7. Click Upload.
 
 ### Option B — arduino-cli
 
@@ -75,6 +79,23 @@ arduino-cli upload --fqbn esp32:esp32:esp32c3 --port COM7 .
 
 (Replace `esp32c3` and `COM7` with what you found above — on macOS/Linux
 the port looks like `/dev/ttyUSB0` or `/dev/cu.usbserial-*`.)
+
+> **Compiling for an original ESP32** (FQBN `esp32:esp32:esp32`, not
+> S3/C3/C6/C2)**?** You'll hit a second error here:
+> `Sketch uses ... 127% of program storage space` /
+> `text section exceeds available space in board`. That chip's Bluedroid
+> library links in a classic-Bluetooth-plus-BLE combo stack even though
+> this firmware only uses BLE, which doesn't fit the default 1.2MB app
+> partition. Fix: give it a bigger one —
+>
+> ```bash
+> arduino-cli compile --fqbn esp32:esp32:esp32:PartitionScheme=huge_app .
+> arduino-cli upload  --fqbn esp32:esp32:esp32:PartitionScheme=huge_app --port COM7 .
+> ```
+>
+> S3/C3/C6/C2 have no classic Bluetooth hardware, so their BLE-only stack
+> is much smaller and fits the default scheme fine (~95% used on an
+> ESP32-C3) — this only affects the original chip.
 
 ### Confirm it's alive
 

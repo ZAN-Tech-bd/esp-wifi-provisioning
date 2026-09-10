@@ -108,10 +108,17 @@ permissions and what to do if the app can't find your device — are in
 ## Works with any ESP32
 
 The firmware only assumes an ESP32 variant with both Wi-Fi and BLE (ESP32,
-S3, C3 — not the S2, which has no Bluetooth radio). It's a plain Arduino
-sketch with one external dependency (ArduinoJson), so it drops into any
-existing ESP32 project: add your own application logic where the sketch
-marks `YOUR CODE HERE`, and it only runs once Wi-Fi is actually connected.
+S3, C3 — not the S2, which has no Bluetooth radio, and not the H2, which has
+no Wi-Fi). It's a plain Arduino sketch with one external dependency
+(ArduinoJson), so it drops into any existing ESP32 project: add your own
+application logic where the sketch marks `YOUR CODE HERE`, and it only runs
+once Wi-Fi is actually connected.
+
+> **Flashing an original ESP32** (not S3/C3/C6/C2)**?** You need a bigger
+> partition scheme (Tools → Partition Scheme → "Huge APP") or the build
+> fails with "text section exceeds available space" — see
+> [`firmware/README.md`](firmware/README.md#common-pitfalls) for why and
+> the exact fix.
 
 ## Why BLE plaintext by default (and how to harden it)
 
