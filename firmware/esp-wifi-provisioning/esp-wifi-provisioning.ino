@@ -2,17 +2,27 @@
  * ZAN Tech - ESP32 Wi-Fi Setup (base template)
  * -----------------------------------------------
  * Lets anyone connect this device to their own Wi-Fi without ever touching
- * the code: on boot, it tries the last Wi-Fi network it was told about. If
- * that fails (or it's never been set up before), it opens its own hotspot.
- * Connect a phone to that hotspot, browse to the shown IP address, and
- * enter the real Wi-Fi name and password - the device saves it and
- * restarts straight onto that network.
+ * the code. How it works:
  *
- * Made by ZAN Tech - https://github.com/ZAN-Tech-bd/esp-ble-wifi-provisioning
+ *   1. On boot, if a Wi-Fi name/password was saved before, try connecting
+ *      to it.
+ *   2. If that works: done, the device is on the network.
+ *   3. If it doesn't (or nothing was saved yet): the device opens its own
+ *      Wi-Fi hotspot instead (see hotspotName() below for the name).
+ *   4. Connect a phone to that hotspot, open a browser, and go to the IP
+ *      address printed on Serial (also shown as "Couldn't connect - setup
+ *      hotspot started" below it). That loads a small form (see page.h) -
+ *      enter the real Wi-Fi name and password there.
+ *   5. Submitting the form saves it to flash and restarts the device,
+ *      which then does step 1 again with the new details.
+ *
+ * The web page's HTML lives in page.h, not here, so this file stays
+ * readable. Everything Wi-Fi/web-server related is handled below - your
+ * own project code goes in ONE place, clearly marked near the bottom of
+ * loop().
+ *
+ * Made by ZAN Tech - https://github.com/ZAN-Tech-bd/esp-wifi-provisioning
  * Licensed under the MIT License.
- *
- * Add your own project's code in loop() below, guarded by a
- * WiFi.status() == WL_CONNECTED check.
  */
 
 #include <WiFi.h>
@@ -20,8 +30,10 @@
 #include <Preferences.h>
 #include <esp_mac.h>
 
+#include "page.h"
+
 #define AP_SSID_PREFIX "ZAN-Setup-"     // hotspot name = prefix + last 2 bytes of the MAC
-#define NVS_NAMESPACE "wifi-config"
+#define NVS_NAMESPACE "wifi-config"     // where credentials are saved in flash
 #define WIFI_CONNECT_TIMEOUT_MS 10000   // how long to try the saved network before giving up
 
 Preferences preferences;
@@ -30,8 +42,11 @@ WebServer server(80);
 String ssid = "";
 String password = "";
 
-// Unique-ish hotspot name so more than one of these devices can be told
-// apart if several are being set up near each other.
+// Builds a hotspot name like "ZAN-Setup-8C38" from the chip's own MAC
+// address, so more than one of these devices can be told apart if several
+// are being set up near each other. Reads the MAC straight from the chip
+// (not WiFi.macAddress()) because that call can return all-zeros this
+// early in boot, before Wi-Fi has actually started.
 String hotspotName() {
   uint8_t mac[6];
   esp_read_mac(mac, ESP_MAC_WIFI_STA);
@@ -40,16 +55,14 @@ String hotspotName() {
   return String(AP_SSID_PREFIX) + suffix;
 }
 
+// GET / - shows the setup form (see page.h).
 void handleRoot() {
-  String html = "<h2>Wi-Fi Setup</h2>"
-                "<form action='/save' method='POST'>"
-                "<input name='ssid' placeholder='Wi-Fi name'><br>"
-                "<input name='pass' type='password' placeholder='Wi-Fi password'><br>"
-                "<input type='submit' value='Connect'>"
-                "</form>";
-  server.send(200, "text/html", html);
+  server.send(200, "text/html", SETUP_PAGE_HTML);
 }
 
+// POST /save - the form in page.h submits here. Saves whatever was typed
+// in and restarts; setup() below then tries connecting with it on the
+// next boot.
 void handleSave() {
   ssid = server.arg("ssid");
   password = server.arg("pass");
@@ -59,7 +72,7 @@ void handleSave() {
   preferences.putString("pass", password);
   preferences.end();
 
-  server.send(200, "text/html", "<h3>Saved! Restarting...</h3>");
+  server.send(200, "text/html", SAVED_PAGE_HTML);
   delay(2000);
   ESP.restart();
 }
@@ -67,11 +80,13 @@ void handleSave() {
 void setup() {
   Serial.begin(115200);
 
+  // --- Step 1: load whatever Wi-Fi details were saved last time --------
   preferences.begin(NVS_NAMESPACE, true);
   ssid = preferences.getString("ssid", "");
   password = preferences.getString("pass", "");
   preferences.end();
 
+  // --- Step 2: try connecting with them, if there were any -------------
   if (ssid != "") {
     WiFi.begin(ssid.c_str(), password.c_str());
     Serial.print("Connecting to saved Wi-Fi");
@@ -83,10 +98,12 @@ void setup() {
     Serial.println();
   }
 
+  // --- Step 3: connected, or not - act accordingly ----------------------
   if (WiFi.status() == WL_CONNECTED) {
     Serial.print("Connected! IP: ");
     Serial.println(WiFi.localIP());
   } else {
+    // No saved Wi-Fi, or it didn't work - open the setup hotspot instead.
     String apName = hotspotName();
     WiFi.softAP(apName.c_str());
     Serial.print("Couldn't connect - setup hotspot started: ");
@@ -98,11 +115,22 @@ void setup() {
     server.on("/save", HTTP_POST, handleSave);
     server.begin();
   }
+
+  // -----------------------------------------------------------------------
+  // YOUR ONE-TIME SETUP CODE GOES HERE (e.g. pinMode(), sensor init).
+  // Runs whether or not Wi-Fi connected - guard anything that needs the
+  // network with `if (WiFi.status() == WL_CONNECTED)`.
+  // -----------------------------------------------------------------------
 }
 
 void loop() {
-  server.handleClient();
+  server.handleClient();  // no-op if the setup hotspot was never started
 
-  // YOUR CODE HERE - runs all the time; check `WiFi.status() ==
-  // WL_CONNECTED` first if what you're doing needs the network.
+  // -----------------------------------------------------------------------
+  // YOUR MAIN CODE GOES HERE. This is where the rest of your project's
+  // logic lives - reading sensors, publishing to MQTT, etc. Check
+  // `WiFi.status() == WL_CONNECTED` first if it needs the network; this
+  // runs continuously either way, whether the device is online or still
+  // sitting in setup-hotspot mode.
+  // -----------------------------------------------------------------------
 }
