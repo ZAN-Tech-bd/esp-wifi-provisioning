@@ -71,19 +71,24 @@ sequenceDiagram
 
 ```
 esp-wifi-provisioning/
-├── src/                       The library itself (ZanWifiSetup.h/.cpp + the setup page's HTML)
+├── src/                          The library itself (ZanWifiSetup.h/.cpp + the setup page's HTML)
 ├── examples/
-│   ├── WifiOnly/               The smallest possible sketch - flash this once
-│   └── BlinkWhileConnected/     Shows where your own project code goes
-├── docs/                       Step-by-step setup guide + screenshots
-├── library.properties          Arduino library metadata
-└── .github/                    CI: compiles both examples on every push
+│   ├── WifiOnly/                  The smallest possible sketch - flash this once
+│   ├── BlinkWhileConnected/       Shows where your own project code goes
+│   └── CustomConfiguration/       Every configuration option in one sketch
+├── docs/                         Documentation + screenshots (see below)
+├── library.properties             Arduino library metadata
+└── .github/                       CI: compiles all three examples on every push
 ```
 
-- [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md) — the full
-  walkthrough: install the library, flash it, connect it, build on it.
-- [`src/ZanWifiSetup.h`](src/ZanWifiSetup.h) — the entire public API, with
-  every method documented inline.
+## Documentation
+
+| Doc | What's in it |
+|---|---|
+| [**GETTING_STARTED.md**](docs/GETTING_STARTED.md) | The full walkthrough: install the library, flash it, connect it, reconfigure it, build your own project on top |
+| [**API_REFERENCE.md**](docs/API_REFERENCE.md) | Every method — what it does, when it blocks, every configuration option and its default, what's stored where |
+| [**TROUBLESHOOTING.md**](docs/TROUBLESHOOTING.md) | Common problems and fixes, starting with the #1 one: ESP32 only supports 2.4GHz Wi-Fi |
+| [`src/ZanWifiSetup.h`](src/ZanWifiSetup.h) | The same API reference, inline in the header if you're already in your editor |
 
 ## Quick start
 
@@ -106,14 +111,18 @@ esp-wifi-provisioning/
 3. **Power it on.** It opens a hotspot named `ZAN-Setup-XXXX`.
 
 4. **Connect a phone to that hotspot**, browse to `http://192.168.4.1/`,
-   enter your Wi-Fi name and password, submit.
+   enter your Wi-Fi name and password, submit. (Use your **2.4GHz**
+   network — ESP32 can't see 5GHz Wi-Fi at all; see
+   [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) if that's not obvious
+   from your Wi-Fi list.)
 
 5. Done — it restarts, joins your Wi-Fi, and the LED goes solid.
 
 6. **Building an actual project?** Start a new sketch, `#include
    <ZanWifiSetup.h>` there too, and write your own code around it — see
-   `examples/BlinkWhileConnected`. The Wi-Fi part is done; you never touch
-   it again.
+   `examples/BlinkWhileConnected`, or `examples/CustomConfiguration` if you
+   also want to change the hotspot name, LED pin, reset pin, or timeout.
+   The Wi-Fi part is done; you never touch it again.
 
 Full details, including every configuration option and how to reconfigure
 a device later, are in [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md).

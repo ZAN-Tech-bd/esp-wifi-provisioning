@@ -4,6 +4,10 @@ Install the library once, flash the setup example once, connect a device
 to your Wi-Fi. Every project after that just includes the same library —
 no app, no BLE, no re-uploading Wi-Fi code ever again.
 
+Something not working? Jump straight to
+[**TROUBLESHOOTING.md**](TROUBLESHOOTING.md) — it covers the most common
+issue first (ESP32 only supports 2.4GHz Wi-Fi).
+
 ---
 
 ## 0. What you need
@@ -94,25 +98,24 @@ Swap `esp32c3` for your actual chip (`esp32`, `esp32s2`, `esp32s3`,
    network (no password by default).
 4. Open a browser and go to **`http://192.168.4.1/`**.
 5. Enter your real Wi-Fi name and password, tap Connect.
+
+   > **Use the 2.4GHz network, not 5GHz.** ESP32 chips can't see 5GHz
+   > Wi-Fi at all. If your router broadcasts both under one name, or your
+   > phone shows two similar names (e.g. `Home-WiFi` and `Home-WiFi-5G`),
+   > pick the 2.4GHz one — see
+   > [TROUBLESHOOTING.md](TROUBLESHOOTING.md#it-wont-connect-to-my-wi-fi--check-this-first)
+   > if you're not sure which.
+
 6. The device saves it and restarts. The LED goes **solid** once it's
    connected, and it reconnects automatically from now on, every boot.
 
-### If the hotspot doesn't show up
+### If the hotspot doesn't show up, or the page won't load
 
-- Give it a few seconds after power-up.
-- Confirm it doesn't already have working Wi-Fi saved from a previous test
-  — a device that connects successfully never opens the hotspot (see
-  "reconfiguring" below).
-- Try a fresh chip or erase flash once (`esptool.py --port COM7
-  erase_flash`) if you're testing repeatedly and want a truly clean slate.
-
-### If the page won't load at 192.168.4.1
-
-- Make sure your phone/laptop actually joined the `ZAN-Setup-XXXX` network
-  (some phones auto-reconnect to a stronger known network in the
-  background — check your Wi-Fi settings).
-- There's no captive-portal auto-popup in this version — you have to type
-  the address into the browser yourself.
+Quick checks: give it a few seconds after power-up, and confirm it doesn't
+already have working Wi-Fi saved from a previous test (a device that
+connects successfully never opens the hotspot — see "reconfiguring"
+below). Full list of causes and fixes:
+[TROUBLESHOOTING.md § The setup hotspot](TROUBLESHOOTING.md#the-setup-hotspot).
 
 ---
 
@@ -174,14 +177,18 @@ Call any of these **before** `ZanWifiSetup.begin()` to change a default:
 | `setResetButtonPin(int)` | `0` (BOOT button) | `-1` disables the reset button entirely |
 | `setConnectTimeoutMs(uint32_t)` | `10000` | How long to try the saved network before opening the hotspot |
 
-Full documentation is inline in [`src/ZanWifiSetup.h`](../src/ZanWifiSetup.h).
+See `examples/CustomConfiguration` for all four in one sketch, and
+[**API_REFERENCE.md**](API_REFERENCE.md) for full details on every method
+(what it returns, when it blocks, what's stored where).
 
 ---
 
 ## 7. Where to go from here
 
-- [`src/ZanWifiSetup.h`](../src/ZanWifiSetup.h) — the entire public API,
-  documented inline.
+- [**API_REFERENCE.md**](API_REFERENCE.md) — every method, fully
+  documented, plus what's stored in flash and the setup page's HTTP routes.
+- [**TROUBLESHOOTING.md**](TROUBLESHOOTING.md) — common problems and fixes,
+  compiling through post-setup.
 - `src/zan_wifi_setup_page.h` — the setup page's HTML, if you want to
   restyle it (see [`../README.md#what-it-looks-like`](../README.md#what-it-looks-like)
   for a screenshot of the current design).
@@ -189,3 +196,4 @@ Full documentation is inline in [`src/ZanWifiSetup.h`](../src/ZanWifiSetup.h).
   any new project.
 - `examples/BlinkWhileConnected` — shows the pattern for adding your own
   logic alongside the library.
+- `examples/CustomConfiguration` — every configuration option in one place.

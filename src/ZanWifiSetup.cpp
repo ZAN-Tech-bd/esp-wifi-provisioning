@@ -71,6 +71,7 @@ void ZanWifiSetupClass::begin() {
     startAccessPoint();
     server_.on("/", HTTP_GET, [this]() { handleRoot(); });
     server_.on("/save", HTTP_POST, [this]() { handleSave(); });
+    server_.onNotFound([this]() { handleNotFound(); });
     server_.begin();
   }
 }
@@ -85,6 +86,12 @@ void ZanWifiSetupClass::startAccessPoint() {
 }
 
 void ZanWifiSetupClass::handleRoot() {
+  server_.send(200, "text/html", ZAN_WIFI_SETUP_PAGE_HTML);
+}
+
+void ZanWifiSetupClass::handleNotFound() {
+  // No dedicated 404 - bounce anything else (e.g. a phone requesting
+  // /favicon.ico, or someone typing a wrong path) back to the setup form.
   server_.send(200, "text/html", ZAN_WIFI_SETUP_PAGE_HTML);
 }
 

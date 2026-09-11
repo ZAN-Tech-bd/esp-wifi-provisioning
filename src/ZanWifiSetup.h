@@ -82,6 +82,7 @@ class ZanWifiSetupClass {
   void startAccessPoint();
   void handleRoot();
   void handleSave();
+  void handleNotFound();
   void checkResetButton();
   void updateStatusLed();
 };
