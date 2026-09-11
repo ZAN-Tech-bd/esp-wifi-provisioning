@@ -1,0 +1,16 @@
+#######################################
+# Syntax Coloring Map for ZanWifiSetup
+#######################################
+
+# Datatypes (KEYWORD1)
+ZanWifiSetupClass	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+ZanWifiSetup	KEYWORD2
+begin	KEYWORD2
+loop	KEYWORD2
+isConnected	KEYWORD2
+setHotspotPrefix	KEYWORD2
+setStatusLedPin	KEYWORD2
+setResetButtonPin	KEYWORD2
+setConnectTimeoutMs	KEYWORD2

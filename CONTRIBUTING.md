@@ -14,16 +14,23 @@ requests, and forks are all welcome.
 
 ## Development setup
 
-See [`firmware/README.md`](firmware/README.md).
+See [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md). This repo is an
+Arduino library (`src/`), not a standalone sketch — both example sketches
+under `examples/` compile against it directly via `--library .` /
+"Add .ZIP Library" pointing at the repo root.
 
 ## Before opening a PR
 
-1. The sketch should still compile with **no external libraries** — that's
-   the whole point of this baseline staying simple. If your change needs
-   one, explain why in the PR description.
-2. Try to keep it compiling for every ESP32 variant (S2/S3/C3/C6/C2 and the
-   original chip), not just whichever one you're testing on.
-3. Describe what you actually tested (which board, which phone/laptop) in
+1. The library should still compile with **no external dependencies** —
+   that's the whole point of this baseline staying simple. If your change
+   needs one, explain why in the PR description.
+2. Try to keep both examples compiling for every ESP32 variant
+   (S2/S3/C3/C6/C2 and the original chip), not just whichever one you're
+   testing on.
+3. If you change the public API (`src/ZanWifiSetup.h`), update the inline
+   doc comments there and the configuration table in
+   [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md) to match.
+4. Describe what you actually tested (which board, which phone/laptop) in
    the PR description — this is hardware-adjacent code that CI can't fully
    verify.
 

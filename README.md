@@ -1,23 +1,28 @@
-# esp-wifi-provisioning
+# ZanWifiSetup
 
-**Connect any ESP32 to Wi-Fi without ever touching the code — no
-hardcoded credentials, no serial cable, no app to install.**
+**An Arduino library that gets any ESP32 onto Wi-Fi without ever touching
+the code — flash it once, then build your actual project separately and
+never deal with Wi-Fi setup again.**
 
 Made by **[ZAN Tech](https://github.com/ZAN-Tech-bd)** and released as a
 free, open-source baseline. Use it as-is, rip out the parts you don't need,
 or build an entire product on top of it — that's the point.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Platform: ESP32](https://img.shields.io/badge/platform-ESP32-blue.svg)](firmware/)
+[![Platform: ESP32](https://img.shields.io/badge/platform-ESP32-blue.svg)](src/)
 
 ## What this is
 
-A lot of ESP32 projects ship with the Wi-Fi SSID/password hardcoded in the
-source file, which means every device needs to be reflashed to move it to
-a new network — a dealbreaker if you're handing devices to people who
-can't (or shouldn't have to) do that themselves. This repo solves it with
-the classic "Wi-Fi setup portal" pattern used across countless ESP32
-projects:
+A lot of ESP32 projects hardcode the Wi-Fi SSID/password in the source
+file, which means every device needs to be reflashed to move it to a new
+network — a dealbreaker if you're handing devices to people who can't (or
+shouldn't have to) do that themselves. It also means every new project
+starts by re-writing the same Wi-Fi setup code from scratch.
+
+This repo is a **library**, not just a sketch, specifically to solve the
+second problem too: install it once, and it's done — every future project
+just includes it and gets Wi-Fi provisioning for free, without ever
+touching or rewriting that part again.
 
 1. A fresh (or reset) ESP32 boots with no saved Wi-Fi and opens its own
    hotspot, `ZAN-Setup-XXXX`.
@@ -25,6 +30,10 @@ projects:
 3. A simple page asks for a Wi-Fi name and password.
 4. Submitting it saves the credentials to flash and restarts the device,
    which connects straight to that network from then on.
+5. The onboard LED shows status at a glance: **solid on = connected**,
+   **blinking = waiting for setup**.
+6. Moving the device somewhere new? Hold the reset button (BOOT / GPIO0)
+   for 3 seconds to erase the saved Wi-Fi and reopen the hotspot.
 
 ## What it looks like
 
@@ -39,7 +48,7 @@ before the device restarts. Colors match ZAN Tech's actual brand — checked
 against [zantechbd.com](https://zantechbd.com)'s live styles rather than
 guessed: dark navy (`#0B0F19`), cyan `#00F0FF` as the primary accent, red
 `#ED2626` for the "TECH" half of the logo. Editable in one place:
-[`firmware/esp-wifi-provisioning/page.h`](firmware/esp-wifi-provisioning/page.h).
+[`src/zan_wifi_setup_page.h`](src/zan_wifi_setup_page.h).
 
 ```mermaid
 sequenceDiagram
@@ -62,40 +71,52 @@ sequenceDiagram
 
 ```
 esp-wifi-provisioning/
-├── firmware/     The Arduino sketch (esp-wifi-provisioning.ino + page.h)
-├── docs/         Step-by-step setup guide
-└── .github/      CI: compiles the firmware on every push
+├── src/                       The library itself (ZanWifiSetup.h/.cpp + the setup page's HTML)
+├── examples/
+│   ├── WifiOnly/               The smallest possible sketch - flash this once
+│   └── BlinkWhileConnected/     Shows where your own project code goes
+├── docs/                       Step-by-step setup guide + screenshots
+├── library.properties          Arduino library metadata
+└── .github/                    CI: compiles both examples on every push
 ```
 
-- [`firmware/README.md`](firmware/README.md) — how it works, build/flash
-  instructions, and the one deliberate trade-off it makes for simplicity.
 - [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md) — the full
-  walkthrough from a blank board to a connected device.
+  walkthrough: install the library, flash it, connect it, build on it.
+- [`src/ZanWifiSetup.h`](src/ZanWifiSetup.h) — the entire public API, with
+  every method documented inline.
 
 ## Quick start
 
-1. **Flash it** onto any ESP32 board:
+1. **Install the library** — download/clone this repo, then in Arduino
+   IDE: Sketch → Include Library → Add .ZIP Library... and select this
+   folder (or a zipped copy of it). One-time setup, works for every future
+   project.
 
-   ```bash
-   # Arduino IDE: just open and upload - no extra libraries needed.
-   firmware/esp-wifi-provisioning/esp-wifi-provisioning.ino
+2. **Flash `examples/WifiOnly` once.** In Arduino IDE: File → Examples →
+   ZanWifiSetup → WifiOnly, pick your board/port, Upload. That's the
+   entire sketch:
 
-   # or arduino-cli:
-   arduino-cli core install esp32:esp32
-   cd firmware/esp-wifi-provisioning
-   arduino-cli compile --fqbn esp32:esp32:esp32c3 .
-   arduino-cli upload  --fqbn esp32:esp32:esp32c3 --port COM7 .
+   ```cpp
+   #include <ZanWifiSetup.h>
+
+   void setup() { ZanWifiSetup.begin(); }
+   void loop()  { ZanWifiSetup.loop(); }
    ```
 
-2. **Power it on.** It opens a hotspot named `ZAN-Setup-XXXX`.
+3. **Power it on.** It opens a hotspot named `ZAN-Setup-XXXX`.
 
-3. **Connect a phone to that hotspot**, browse to `http://192.168.4.1/`,
+4. **Connect a phone to that hotspot**, browse to `http://192.168.4.1/`,
    enter your Wi-Fi name and password, submit.
 
-4. Done — it restarts and joins your Wi-Fi network.
+5. Done — it restarts, joins your Wi-Fi, and the LED goes solid.
 
-Full details, including how to reconfigure a device later, are in
-[`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md).
+6. **Building an actual project?** Start a new sketch, `#include
+   <ZanWifiSetup.h>` there too, and write your own code around it — see
+   `examples/BlinkWhileConnected`. The Wi-Fi part is done; you never touch
+   it again.
+
+Full details, including every configuration option and how to reconfigure
+a device later, are in [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md).
 
 ## Works with every ESP32 variant
 
@@ -104,14 +125,6 @@ chip: original ESP32, S2, S3, C3, C6, C2. (An earlier version of this repo
 used BLE + a companion phone app instead; that's gone now in favor of this
 much simpler approach, which needs no app and works on Wi-Fi-only chips
 like the S2 too.)
-
-## Adding your own project
-
-Everything lives in one sketch: `firmware/esp-wifi-provisioning/esp-wifi-provisioning.ino`
-(logic) + `page.h` (the setup page's HTML). Two comments inside the `.ino`
-mark exactly where your own project code goes — one for one-time setup,
-one for your main loop. See [`firmware/README.md`](firmware/README.md) for
-the full breakdown.
 
 ## Contributing
 

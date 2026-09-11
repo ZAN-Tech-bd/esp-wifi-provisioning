@@ -1,7 +1,8 @@
 # Getting Started
 
-Flash the firmware, connect a device to your Wi-Fi, done. No app to
-install, no BLE, no serial cable needed after the first flash.
+Install the library once, flash the setup example once, connect a device
+to your Wi-Fi. Every project after that just includes the same library —
+no app, no BLE, no re-uploading Wi-Fi code ever again.
 
 ---
 
@@ -14,28 +15,61 @@ install, no BLE, no serial cable needed after the first flash.
 
 ---
 
-## 1. Flash the firmware
+## 1. Install the library (one time, ever)
 
 ### Arduino IDE
 
 1. Boards Manager → install `esp32` by Espressif Systems (if you haven't
    already).
-2. Open `firmware/esp-wifi-provisioning/esp-wifi-provisioning.ino`.
-3. Tools → Board → pick your exact chip; Tools → Port → pick its port.
-4. Click Upload.
+2. Download this repo (or clone it) as a folder named `ZanWifiSetup` (or
+   just use it as-is — the folder name doesn't have to match once it's a
+   .ZIP; Arduino reads the name from `library.properties`).
+3. Sketch → Include Library → **Add .ZIP Library...** and select it. Or
+   copy the whole folder directly into your `Arduino/libraries/` directory
+   and restart the IDE.
 
-No extra libraries to install — everything this sketch uses ships with the
-`esp32` board package.
+That's it — every sketch from now on can `#include <ZanWifiSetup.h>`.
 
 ### arduino-cli
 
 ```bash
 arduino-cli core install esp32:esp32
+```
 
+Nothing to install for the library itself — point `--library` at wherever
+you put this repo for every compile/upload below instead:
+
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32c3 --library /path/to/esp-wifi-provisioning examples/WifiOnly
+```
+
+---
+
+## 2. Flash the setup example once
+
+### Arduino IDE
+
+1. File → Examples → ZanWifiSetup → **WifiOnly**.
+2. Tools → Board → pick your exact chip; Tools → Port → pick its port.
+3. Click Upload.
+
+The entire sketch is:
+
+```cpp
+#include <ZanWifiSetup.h>
+
+void setup() { ZanWifiSetup.begin(); }
+void loop()  { ZanWifiSetup.loop(); }
+```
+
+### arduino-cli
+
+Run these from inside this repo's root folder (`--library .` refers to it):
+
+```bash
 arduino-cli board list          # find your port + exact chip
-cd firmware/esp-wifi-provisioning
-arduino-cli compile --fqbn esp32:esp32:esp32c3 .
-arduino-cli upload  --fqbn esp32:esp32:esp32c3 --port COM7 .
+arduino-cli compile --fqbn esp32:esp32:esp32c3 --library . examples/WifiOnly
+arduino-cli upload  --fqbn esp32:esp32:esp32c3 --library . --port COM7 examples/WifiOnly
 ```
 
 Swap `esp32c3` for your actual chip (`esp32`, `esp32s2`, `esp32s3`,
@@ -49,18 +83,19 @@ Swap `esp32c3` for your actual chip (`esp32`, `esp32s2`, `esp32s3`,
 
 ---
 
-## 2. Connect it to your Wi-Fi
+## 3. Connect it to your Wi-Fi
 
 1. Power the board. Open the Serial Monitor at `115200` baud if you want to
-   watch this happen — otherwise just wait a few seconds.
+   watch this happen — otherwise just watch the onboard LED: **blinking**
+   means it's waiting for setup.
 2. It has no saved Wi-Fi yet, so it opens its own hotspot named
    **`ZAN-Setup-XXXX`** (`XXXX` = last 2 bytes of its MAC address).
 3. On your phone or laptop, connect to that hotspot like any other Wi-Fi
    network (no password by default).
 4. Open a browser and go to **`http://192.168.4.1/`**.
 5. Enter your real Wi-Fi name and password, tap Connect.
-6. The device saves it and restarts. It reconnects to your Wi-Fi
-   automatically from now on, every time it boots.
+6. The device saves it and restarts. The LED goes **solid** once it's
+   connected, and it reconnects automatically from now on, every boot.
 
 ### If the hotspot doesn't show up
 
@@ -81,29 +116,76 @@ Swap `esp32c3` for your actual chip (`esp32`, `esp32s2`, `esp32s3`,
 
 ---
 
-## 3. Reconfiguring later (new Wi-Fi network)
+## 4. Reconfiguring later (new Wi-Fi network, or moved somewhere new)
 
-This version keeps things to one simple rule: **the setup hotspot only
-opens when the device can't connect.** So to change networks:
+Two ways:
 
-1. Take the device somewhere its current saved network is out of range (or
-   turn that router off), then power-cycle it.
-2. It'll fail to connect, fall back to the `ZAN-Setup-XXXX` hotspot
-   automatically, and you repeat step 2 above with the new network.
+- **Hold the reset button** (BOOT / GPIO0 by default) for **3 seconds**.
+  This erases the saved Wi-Fi and reopens the setup hotspot immediately —
+  the LED starts blinking again. Use this any time you move a device to a
+  new place.
+- **Do nothing and just relocate it.** If the saved network genuinely can't
+  be reached (out of range, router replaced), the device fails to connect
+  on its own and falls back to the hotspot automatically on the next boot.
 
-There's no way to change Wi-Fi from a browser while it's still
-successfully connected — see
-[`firmware/README.md`](../firmware/README.md#a-known-trade-off-by-design)
-for why that's a deliberate simplification, not an oversight.
+There's no way to change Wi-Fi from a browser while the device is still
+successfully connected — only the reset button or a failed connection
+attempt opens the setup hotspot. See
+[`src/ZanWifiSetup.h`](../src/ZanWifiSetup.h) if you want to change this
+behavior (e.g. `setResetButtonPin()` to move it to a different pin, or
+`-1` to disable it entirely).
 
 ---
 
-## 4. Where to go from here
+## 5. Building your actual project
 
-- [`firmware/README.md`](../firmware/README.md) — full file-by-file
-  breakdown and how the sketch is organized.
-- `firmware/esp-wifi-provisioning/esp-wifi-provisioning.ino` — the whole
-  sketch; look for the two `YOUR ... CODE GOES HERE` comments to see where
-  to add your own project's logic.
-- `firmware/esp-wifi-provisioning/page.h` — the setup page's HTML, if you
-  want to restyle it.
+**Don't add to the `WifiOnly` example.** Start a **new sketch** and
+include the same library there too:
+
+```cpp
+#include <ZanWifiSetup.h>
+
+void setup() {
+  ZanWifiSetup.begin();
+  // your one-time setup code (pinMode(), sensor init, etc.)
+}
+
+void loop() {
+  ZanWifiSetup.loop();
+  // your project code - check ZanWifiSetup.isConnected() first if it
+  // needs the network
+}
+```
+
+See `examples/BlinkWhileConnected` for a working version of this pattern
+(blinks an LED once a second, but only once connected). This is the whole
+point of it being a library instead of a sketch: the Wi-Fi part is done
+once, and every future project — or every new feature in this one — just
+builds around it without ever touching `src/ZanWifiSetup.h`/`.cpp` again.
+
+## 6. Configuration reference
+
+Call any of these **before** `ZanWifiSetup.begin()` to change a default:
+
+| Method | Default | Purpose |
+|---|---|---|
+| `setHotspotPrefix(const char*)` | `"ZAN-Setup-"` | Hotspot name prefix (MAC suffix is appended automatically) |
+| `setStatusLedPin(int)` | `LED_BUILTIN` | `-1` disables the LED entirely |
+| `setResetButtonPin(int)` | `0` (BOOT button) | `-1` disables the reset button entirely |
+| `setConnectTimeoutMs(uint32_t)` | `10000` | How long to try the saved network before opening the hotspot |
+
+Full documentation is inline in [`src/ZanWifiSetup.h`](../src/ZanWifiSetup.h).
+
+---
+
+## 7. Where to go from here
+
+- [`src/ZanWifiSetup.h`](../src/ZanWifiSetup.h) — the entire public API,
+  documented inline.
+- `src/zan_wifi_setup_page.h` — the setup page's HTML, if you want to
+  restyle it (see [`../README.md#what-it-looks-like`](../README.md#what-it-looks-like)
+  for a screenshot of the current design).
+- `examples/WifiOnly` — the minimal sketch, good as a starting point for
+  any new project.
+- `examples/BlinkWhileConnected` — shows the pattern for adding your own
+  logic alongside the library.

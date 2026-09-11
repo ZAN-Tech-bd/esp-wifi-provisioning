@@ -1,21 +1,20 @@
 /*
- * ZAN Tech - ESP32 Wi-Fi Setup
- * page.h - the setup page's HTML, kept out of the .ino so the actual
- * program logic there isn't cluttered with markup.
+ * ZanWifiSetup - internal setup-page HTML.
+ * -----------------------------------------
+ * Not part of the public API - ZanWifiSetup.h doesn't include this on
+ * purpose. Colors match zantechbd.com's actual theme (dark navy
+ * background, cyan as the primary accent, red reserved for the "TECH"
+ * half of the logo) - verified against the live site's computed styles,
+ * not guessed.
  *
- * Colors match zantechbd.com's actual theme (dark navy background, cyan
- * as the primary accent, red reserved for the "TECH" half of the logo) -
- * verified against the live site's computed styles, not guessed.
- *
- * Want to change how the setup page looks? This is the only file you need
- * to edit - nothing in the .ino needs to change to match. Both pages are
- * fully self-contained (inline CSS/JS, no external fonts or CDNs) since
- * the device has no internet access while its own hotspot is active.
+ * Want to change how the setup page looks? Edit this file - nothing else
+ * in the library needs to change to match, as long as the form still posts
+ * "ssid" and "pass" to /save.
  */
 #pragma once
 
 // Shown at "/" - the form the user fills in with their Wi-Fi name/password.
-const char SETUP_PAGE_HTML[] = R"rawliteral(
+const char ZAN_WIFI_SETUP_PAGE_HTML[] = R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -118,7 +117,7 @@ const char SETUP_PAGE_HTML[] = R"rawliteral(
 )rawliteral";
 
 // Shown right after the form is submitted, just before the device restarts.
-const char SAVED_PAGE_HTML[] = R"rawliteral(
+const char ZAN_WIFI_SAVED_PAGE_HTML[] = R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
 <head>
